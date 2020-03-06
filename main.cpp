@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <iostream>
 #include <sstream>
-#include <map>
-#include <boost/lexical_cast.hpp>
 
 #ifndef ONLINE_JUDGE
 #include <gmock/gmock.h>
