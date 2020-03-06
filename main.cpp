@@ -5,6 +5,8 @@
 #include <vector>
 #include <boost/lexical_cast.hpp>
 
+//#define ONLINE_JUDGE
+
 #ifndef ONLINE_JUDGE
 #include <gmock/gmock.h>
 #endif
@@ -28,16 +30,14 @@ private:
 class Rect
 {
 public:
-    Rect(int left, int top, int right, int bottom);
+    Rect(const Point & top_left, const Point & bottom_right);
 
 public:
     bool contains(const Point & point) const;
 
 private:
-    int left_;
-    int top_;
-    int right_;
-    int bottom_;
+    Point top_left_;
+    Point bottom_right_;
 };
 
 struct screen_t
@@ -68,27 +68,18 @@ double Point::distance(const Point & point) const
     return sqrt(pow(x() - point.x(), 2) + pow(y() - point.y(), 2));
 }
 
-Rect::Rect(int left, int top, int right, int bottom)
-    : left_(left)
-    , top_(top)
-    , right_(right)
-    , bottom_(bottom)
+Rect::Rect(const Point & top_left, const Point & bottom_right)
+    : top_left_(top_left)
+    , bottom_right_(bottom_right)
 {
-    BOOST_ASSERT(left < right);
-    BOOST_ASSERT(top < bottom);
+    BOOST_ASSERT(top_left_.x() < bottom_right_.x());
+    BOOST_ASSERT(top_left_.y() < bottom_right_.y());
 }
 
 bool Rect::contains(const Point & point) const
 {
-    return left_ <= point.x() && point.x() <= right_ &&
-           top_ <= point.y() && point.y() <= bottom_;
-}
-
-Rect read_region(std::istream & is)
-{
-    int left, top, right, bottom;
-    is >> left >> top >> right >> bottom;
-    return Rect(left, top, right, bottom);
+    return top_left_.x() <= point.x() && point.x() <= bottom_right_.x() &&
+           top_left_.y() <= point.y() && point.y() <= bottom_right_.y();
 }
 
 Point read_point(std::istream & is)
@@ -96,6 +87,13 @@ Point read_point(std::istream & is)
     int x, y;
     is >> x >> y;
     return Point(x, y);
+}
+
+Rect read_region(std::istream & is)
+{
+    auto left_top = read_point(is);
+    auto bottom_right = read_point(is);
+    return Rect(left_top, bottom_right);
 }
 
 void add_region(const Rect & region, screen_t & screen)
@@ -226,6 +224,25 @@ TEST(MouseClicks, Sample)
         "  1\n"
         "  6  7\n"
         "C\n"
+        , oss.str());
+}
+
+TEST(MouseClicks, uDebug)
+{
+    std::istringstream iss(
+        "I 0 0\n"
+        "I 0 100\n"
+        "I 100 0\n"
+        "R 80 80 120 120\n"
+        "I 100 100\n"
+        "M 50 50\n"
+        "#\n"
+    );
+    std::ostringstream oss;
+
+    mouse_clicks(iss, oss);
+    EXPECT_EQ(
+        "  1  2  3\n"
         , oss.str());
 }
 #endif
