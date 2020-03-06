@@ -1,6 +1,9 @@
 #include <assert.h>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <vector>
+#include <boost/lexical_cast.hpp>
 
 #ifndef ONLINE_JUDGE
 #include <gmock/gmock.h>
@@ -22,10 +25,10 @@ private:
     int y_;
 };
 
-class Region
+class Rect
 {
 public:
-    Region(int left, int top, int right, int bottom);
+    Rect(int left, int top, int right, int bottom);
 
 public:
     bool contains(const Point & point) const;
@@ -39,7 +42,7 @@ private:
 
 struct screen_t
 {
-    std::vector<Region> regions;
+    std::vector<Rect> regions;
     std::vector<Point> icons;
 };
 
@@ -65,7 +68,7 @@ double Point::distance(const Point & point) const
     return sqrt(pow(x() - point.x(), 2) + pow(y() - point.y(), 2));
 }
 
-Region::Region(int left, int top, int right, int bottom)
+Rect::Rect(int left, int top, int right, int bottom)
     : left_(left)
     , top_(top)
     , right_(right)
@@ -75,17 +78,17 @@ Region::Region(int left, int top, int right, int bottom)
     BOOST_ASSERT(top < bottom);
 }
 
-bool Region::contains(const Point & point) const
+bool Rect::contains(const Point & point) const
 {
     return left_ <= point.x() && point.x() <= right_ &&
            top_ <= point.y() && point.y() <= bottom_;
 }
 
-Region read_region(std::istream & is)
+Rect read_region(std::istream & is)
 {
     int left, top, right, bottom;
     is >> left >> top >> right >> bottom;
-    return Region(left, top, right, bottom);
+    return Rect(left, top, right, bottom);
 }
 
 Point read_point(std::istream & is)
@@ -93,6 +96,32 @@ Point read_point(std::istream & is)
     int x, y;
     is >> x >> y;
     return Point(x, y);
+}
+
+void add_region(const Rect & region, screen_t & screen)
+{
+    for (int i = screen.icons.size() - 1; i >= 0; --i)
+    {
+        if (region.contains(screen.icons[i]))
+        {
+            screen.icons.erase(screen.icons.begin() + i);
+        }
+    }
+
+    screen.regions.push_back(region);
+}
+
+void add_icon(const Point & icon, screen_t & screen)
+{
+    for (auto & region : screen.regions)
+    {
+        if (region.contains(icon))
+        {
+            return;
+        }
+    }
+
+    screen.icons.push_back(icon);
 }
 
 void select_by_click(const screen_t screen, const Point & click, std::ostream & os)
@@ -142,10 +171,10 @@ void mouse_clicks(std::istream & is, std::ostream & os)
         switch (type)
         {
         case 'R':
-            screen.regions.push_back(read_region(is));
+            add_region(read_region(is), screen);
             break;
         case 'I':
-            screen.icons.push_back(read_point(is));
+            add_icon(read_point(is), screen);
             break;
         case 'M':
             select_by_click(screen, read_point(is), os);
